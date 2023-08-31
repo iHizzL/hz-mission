@@ -85,6 +85,32 @@ local function loadMissions()
     end
 end
 
+local function deliverAnimation(ped)
+    -- Face each other
+        local playerPed = PlayerPedId()
+        FreezeEntityPosition(ped, false)
+		TaskTurnPedToFaceEntity(ped, playerPed, 1.0)
+		TaskTurnPedToFaceEntity(playerPed, ped, 1.0)
+		Wait(1500)
+		PlayAmbientSpeech1(ped, "Generic_Hi", "Speech_Params_Force")
+		Wait(1000)
+
+		-- Playerped animation
+		RequestAnimDict("mp_safehouselost@")
+    	while not HasAnimDictLoaded("mp_safehouselost@") do Wait(10) end
+    	TaskPlayAnim(playerPed, "mp_safehouselost@", "package_dropoff", 8.0, 1.0, -1, 16, 0, 0, 0, 0)
+		Wait(800)
+		
+		-- Oxyped animation
+		PlayAmbientSpeech1(ped, "Chat_State", "Speech_Params_Force")
+		Wait(500)
+		RequestAnimDict("mp_safehouselost@")
+		while not HasAnimDictLoaded("mp_safehouselost@") do Wait(10) end
+		TaskPlayAnim(ped, "mp_safehouselost@", "package_dropoff", 8.0, 1.0, -1, 16, 0, 0, 0, 0 )
+		Wait(3000)
+
+end
+
 
 local function loadNetEvents()
     for k, v in pairs(Config.Missions) do
@@ -157,13 +183,17 @@ local function loadNetEvents()
             end
         RegisterNetEvent(v.finishEvent, function()
             if onMission == true then
+            exports['qb-target']:RemoveTargetEntity(destinationPed)
             RemoveBlip(blip)
             print(v.itemReward)
             local reward = v.itemReward
             local finishedMessage = v.finishedMessage
             print("HELL")
+            deliverAnimation(destinationPed)
             TriggerServerEvent("hz-mission:getItem", reward, finishedMessage)
-            exports['qb-target']:RemoveTargetEntity(destinationPed, 'Test')
+            -- Ped wander off/delete
+            TaskWanderStandard(destinationPed, 10.0, 10)
+            Wait(10000)
             DeletePed(destinationPed)
             onMission = false
             end
