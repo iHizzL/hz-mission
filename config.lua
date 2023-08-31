@@ -3,7 +3,7 @@
 -- GTA: Steal a car and deliver it to a location
 
 Config = {
-
+-- If pickupitem is empty, not item is needed for the mission to be completed.
 Missions = {
     ['mission1'] = {
         name = "StartMission",
@@ -18,7 +18,8 @@ Missions = {
         destinationText = 'Lever nøkler',
         finishEvent = "hz-mission:finishMission",
         itemReward = "advancedlockpick",
-        finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett."
+        finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
+        pickupItem = "thermite"
 
     },
 

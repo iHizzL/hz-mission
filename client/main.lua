@@ -36,7 +36,7 @@ local function createMissionPed(model, startCoord, targetText, targetEvent, targ
 end
 
 -- Creates the destinationPed for "goto" missions and links their qb-target from the config.
-local function createGotoPed(destinationModel, destination, destinationText, finishEvent, icon)
+local function createGotoPed(destinationModel, destination, destinationText, finishEvent, icon, pickupItem)
     local hash = GetHashKey(destinationModel)
     local coords = destination
 
@@ -50,6 +50,7 @@ local function createGotoPed(destinationModel, destination, destinationText, fin
     SetBlockingOfNonTemporaryEvents(destinationPed, true)
     SetModelAsNoLongerNeeded(destinationPed)
     Wait(500)
+    if pickupItem == "" then
     exports['qb-target']:AddTargetEntity(destinationPed, {
         options = {
             {
@@ -61,6 +62,21 @@ local function createGotoPed(destinationModel, destination, destinationText, fin
         },
         distance = 2.0
     })
+    end
+    if pickupItem ~= "" then
+        exports['qb-target']:AddTargetEntity(destinationPed, {
+            options = {
+                {
+                    type = "client",
+                    event = finishEvent,
+                    icon = icon,
+                    label = destinationText,
+                    item = pickupItem
+                }
+            },
+            distance = 2.0
+        })
+        end
     return destinationPed
 end
 
@@ -122,7 +138,7 @@ local function loadNetEvents()
             if v.type == "goto" then
                 print(v.destination)
                 destination = v.destination
-                destinationPed = createGotoPed(v.destinationModel, v.destination, v.destinationText, v.finishEvent, v.targetIcon)
+                destinationPed = createGotoPed(v.destinationModel, v.destination, v.destinationText, v.finishEvent, v.targetIcon, v.pickupItem)
                 blip = AddBlipForCoord(destination.x, destination.y, destination.z)
                 SetBlipRoute(blip, true)
                 onMission = true
@@ -183,7 +199,10 @@ local function loadNetEvents()
                             end
                         end
                 end
-                end)
+            end)
+                if v.type == "pickup" then
+                    
+                end
             end
         RegisterNetEvent(v.finishEvent, function()
             if onMission == true then
@@ -192,8 +211,10 @@ local function loadNetEvents()
             print(v.itemReward)
             local reward = v.itemReward
             local finishedMessage = v.finishedMessage
-            print("HELL")
             deliverAnimation(destinationPed)
+            if v.pickupItem then
+                TriggerServerEvent("hz-mission:removeItem", v.pickupItem, finishedMessage)
+            end
             TriggerServerEvent("hz-mission:getItem", reward, finishedMessage)
             -- Ped wander off/delete
             TaskWanderStandard(destinationPed, 10.0, 10)
