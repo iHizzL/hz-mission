@@ -3,6 +3,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 
 local onMission = false
 
+-- Template function for creating missionPeds based on the config.
 local function createMissionPed(model, startCoord, targetText, targetEvent, targetIcon)
 	local hash = GetHashKey(model)
     local coords = startCoord
@@ -34,6 +35,7 @@ local function createMissionPed(model, startCoord, targetText, targetEvent, targ
     })
 end
 
+-- Creates the destinationPed for "goto" missions and links their qb-target from the config.
 local function createGotoPed(destinationModel, destination, destinationText, finishEvent, icon)
     local hash = GetHashKey(destinationModel)
     local coords = destination
@@ -76,6 +78,7 @@ local function createStealCar(model, destination)
     return vehicle
 end
 
+-- Spawns the peds for starting missions and links their qb-target from the config.
 local function loadMissions()
     for k, v in pairs(Config.Missions) do
         print(v.model)
@@ -85,6 +88,7 @@ local function loadMissions()
     end
 end
 
+-- Function for handling animation for goto missions.
 local function deliverAnimation(ped)
     -- Face each other
         local playerPed = PlayerPedId()
@@ -111,7 +115,7 @@ local function deliverAnimation(ped)
 
 end
 
-
+-- Load all needed RegisterNetEvents for all missions dynamically.
 local function loadNetEvents()
     for k, v in pairs(Config.Missions) do
         RegisterNetEvent(v.targetEvent, function()
@@ -206,7 +210,7 @@ end
 
 
 
-
+-- Start the script.
 RegisterCommand('mStart', function()
     print(onMission)
     loadMissions()
