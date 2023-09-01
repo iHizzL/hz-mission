@@ -102,7 +102,7 @@ local function createStealCar(model, destination)
     local coords = destination
     RequestModel(car)
     while not HasModelLoaded(car) do Wait(10) end
-    local vehicle = CreateVehicle(car, coords.x, coords.y, coords.z, coords.w, true, false)
+    local vehicle = CreateVehicle(car, coords.x, coords.y, coords.z, 0, true, false)
     SetVehicleOnGroundProperly(vehicle)
     SetVehicleEngineOn(vehicle, false, true)
     SetModelAsNoLongerNeeded(vehicle)
@@ -147,6 +147,38 @@ local function deliverAnimation(ped)
 
 end
 
+local function loadPostProp(location)
+    local modelHash = `prop_cardbordbox_03a` -- The ` return the jenkins hash of a string. see more at: https://cookbook.fivem.net/2019/06/23/lua-support-for-compile-time-jenkins-hashes/
+    local spawnLocation = vector4(location.x, location.y-6, location.z, location.w)
+
+    if not HasModelLoaded(modelHash) then
+        -- If the model isnt loaded we request the loading of the model and wait that the model is loaded
+        RequestModel(modelHash)
+
+        while not HasModelLoaded(modelHash) do
+            Citizen.Wait(1)
+        end
+    end
+
+    -- At this moment the model its loaded, so now we can create the object
+    local obj = CreateObject(modelHash, spawnLocation, true)
+    PlaceObjectOnGroundProperly_2(obj)
+    FreezeEntityPosition(obj, true)
+    exports['qb-target']:AddTargetEntity(obj, {
+        options = {
+            {
+                type = "client",
+                action = function(obj)
+                    TriggerEvent('hz-mission:post:pickup', obj)
+                end,
+                icon = "fa-solid fa-truck-fast",
+                label = "Stjel"
+            }
+        },
+        distance = 2.0
+    })
+    return obj
+end
 -- Load all needed RegisterNetEvents for all missions dynamically.
 local function loadNetEvents()
     for k, v in pairs(Config.Missions) do
@@ -212,12 +244,33 @@ local function loadNetEvents()
                                 DeleteVehicle(delveh)
                                 onMission = false
                                 completedMissions = completedMissions + 1
+                                TriggerServerEvent("hz-mission:gta:getReward", v.paymentType, v.finishedMessage, v.rewardAmount)
                                 break
                             end
                         end
                 end
             end)
             end
+        if v.type == "post" then
+            local robbed = false
+            local car = createStealCar(v.carModel, v.destination)
+            --Create thread to check if player is inside car and if so, set gps for a destination and then break thread.
+            SetVehicleDoorOpen(car, 3, false, false)
+            SetVehicleDoorOpen(car, 2, false, false)
+            Wait(100)
+            obj = loadPostProp(v.destination)
+            blip = AddBlipForEntity(car)
+            SetBlipSprite(blip, 225)
+            SetBlipColour(blip, 1)
+            SetBlipRoute(blip, true)
+            BeginTextCommandSetBlipName("STRING")
+            AddTextComponentString(v.carName)
+            EndTextCommandSetBlipName(blip)
+            onMission = true
+            Wait(10000)
+            DeleteObject(obj)
+            DeleteVehicle(car)
+        end
         RegisterNetEvent(v.finishEvent, function()
             if onMission == true then
             exports['qb-target']:RemoveTargetEntity(destinationPed)
@@ -243,6 +296,10 @@ local function loadNetEvents()
 end
 end
 
+RegisterNetEvent('hz-mission:post:pickup', function(prop)
+    FreezeEntityPosition(prop, false)
+    AttachEntityToEntity(prop, PlayerPedId(), GetPedBoneIndex(PlayerPedId(), 57005), 10, 0, 10, 10, 100, 0, false, false, false, false, 2, true)
+end)
 
 
 

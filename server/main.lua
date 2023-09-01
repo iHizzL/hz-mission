@@ -16,3 +16,10 @@ RegisterServerEvent('hz-mission:removeItem', function(item)
     Player.Functions.RemoveItem(item, 1)
     TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], 'remove')
 end)
+
+RegisterServerEvent('hz-mission:gta:getReward', function(type, finishedMessage, rewardAmount)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    Player.Functions.AddMoney(type, rewardAmount, "gtamoney")
+    TriggerClientEvent('QBCore:Notify', src, finishedMessage)
+end)

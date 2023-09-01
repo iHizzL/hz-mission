@@ -19,7 +19,7 @@ Missions = {
         finishEvent = "hz-mission:finishMission",
         itemReward = "advancedlockpick",
         finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
-        pickupItem = "thermite",
+        pickupItem = "",
         levelRequirement = 0,
 
     },
@@ -36,11 +36,32 @@ Missions = {
         destinationModel = 'a_m_y_epsilon_01',
         destinationText = 'Lever',
         finishEvent = "hz-mission:finishMission",
-        itemReward = "advancedlockpick",
+        itemReward = "",
         finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
         carModel = 'dubsta',
         carDeliverDestination = vector4(-954.7, -1287.38, 5.03, 118.74),
-        carName = 'Oppdrag'
+        carName = 'Oppdrag',
+        paymentType = "bank",
+        rewardAmount = "1000"
+
+    },
+
+    ['mission3'] = {
+        name = "StartMission3",
+        model = "a_m_m_malibu_01",
+        startCoord = vector4(-528.39, -2873.7, 6.0, 167.75),
+        targetEvent = "hz-mission:post:startMission",
+        targetIcon = "fa-solid fa-hand",
+        targetText = "Ran posten",
+        type = "post",
+        destination = vector4(-523.91, -2865.61, 5.9, 46.28),
+        destinationModel = 'a_m_y_epsilon_01',
+        destinationText = 'Ran',
+        finishEvent = "hz-mission:finishMission",
+        itemReward = "advancedlockpick",
+        finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
+        carModel = 'BOXVILLE2',
+        carName = 'Ran'
 
     },
 }
