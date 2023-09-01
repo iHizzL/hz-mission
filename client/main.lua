@@ -81,9 +81,14 @@ local function createGotoPed(destinationModel, destination, destinationText, fin
                     type = "client",
                     event = finishEvent,
                     icon = icon,
-                    label = destinationText,
+                    label = "Gi " .. pickupItem,
                     item = pickupItem
-                }
+                },
+                {
+                    type = "client",
+                    icon = icon,
+                    label = "Har du " .. pickupItem .. "?"
+                },
             },
             distance = 2.0
         })

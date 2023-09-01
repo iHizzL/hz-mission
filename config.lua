@@ -20,7 +20,7 @@ Missions = {
         itemReward = "advancedlockpick",
         finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
         pickupItem = "thermite",
-        levelRequirement = 1,
+        levelRequirement = 0,
 
     },
 
