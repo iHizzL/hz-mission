@@ -2,11 +2,20 @@ local QBCore = exports['qb-core']:GetCoreObject()
 
 
 local onMission = false
+local completedMissions = 0
+
+local function getCurrentLevel()
+    return completedMissions
+end
 
 -- Template function for creating missionPeds based on the config.
-local function createMissionPed(model, startCoord, targetText, targetEvent, targetIcon)
+local function createMissionPed(model, startCoord, targetText, targetEvent, targetIcon, levelRequirement)
 	local hash = GetHashKey(model)
     local coords = startCoord
+    local level = completedMissions
+    if not levelRequirement then
+        levelRequirement = 0
+    end
 
     RequestModel(hash)
     while not HasModelLoaded(hash) do Wait(10) end
@@ -18,6 +27,8 @@ local function createMissionPed(model, startCoord, targetText, targetEvent, targ
     SetBlockingOfNonTemporaryEvents(ped, true)
     SetModelAsNoLongerNeeded(ped)
     Wait(500)
+    print(levelRequirement)
+    print(level)
     exports['qb-target']:AddTargetEntity(ped, {
         options = {
             {
@@ -26,8 +37,8 @@ local function createMissionPed(model, startCoord, targetText, targetEvent, targ
                 icon = targetIcon,
                 label = targetText,
                 canInteract = function()
-                    if onMission == false then return true
-                end
+                    -- level req not working. Not updating after finishing mission. Qbtarget not detecting change
+                    if onMission == false and levelRequirement <= getCurrentLevel() then return true end
             end
             }
         },
@@ -99,7 +110,7 @@ local function loadMissions()
     for k, v in pairs(Config.Missions) do
         print(v.model)
         Wait(100)
-        local ped = createMissionPed(v.model, v.startCoord, v.targetText, v.targetEvent, v.targetIcon)
+        local ped = createMissionPed(v.model, v.startCoord, v.targetText, v.targetEvent, v.targetIcon, v.levelRequirement)
 
     end
 end
@@ -192,17 +203,15 @@ local function loadNetEvents()
                                 delveh = GetVehiclePedIsIn(playerPed, false)
                                 TaskLeaveAnyVehicle(playerPed, 0, 0)
                                 SetVehicleDoorsLocked(delveh, 2)
-                                Wait(90000)
+                                Wait(10000)
                                 DeleteVehicle(delveh)
                                 onMission = false
+                                completedMissions = completedMissions + 1
                                 break
                             end
                         end
                 end
             end)
-                if v.type == "pickup" then
-                    
-                end
             end
         RegisterNetEvent(v.finishEvent, function()
             if onMission == true then
@@ -213,7 +222,7 @@ local function loadNetEvents()
             local finishedMessage = v.finishedMessage
             deliverAnimation(destinationPed)
             if v.pickupItem then
-                TriggerServerEvent("hz-mission:removeItem", v.pickupItem, finishedMessage)
+                TriggerServerEvent("hz-mission:removeItem", v.pickupItem)
             end
             TriggerServerEvent("hz-mission:getItem", reward, finishedMessage)
             -- Ped wander off/delete
@@ -221,6 +230,7 @@ local function loadNetEvents()
             Wait(10000)
             DeletePed(destinationPed)
             onMission = false
+            completedMissions = completedMissions + 1
             end
         end)
         Wait(100)

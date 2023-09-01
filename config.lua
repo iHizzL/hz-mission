@@ -19,7 +19,8 @@ Missions = {
         finishEvent = "hz-mission:finishMission",
         itemReward = "advancedlockpick",
         finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
-        pickupItem = "thermite"
+        pickupItem = "thermite",
+        levelRequirement = 1,
 
     },
 
