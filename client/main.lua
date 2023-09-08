@@ -2,11 +2,23 @@ local QBCore = exports['qb-core']:GetCoreObject()
 
 
 local onMission = false
-local completedMissions = 0
+local completedMissions = 5
+local missionPedLoaded = false
 
 local function getCurrentLevel()
     return completedMissions
 end
+
+
+local function getMissionStatus()
+    return onMission
+end
+
+RegisterNetEvent("checkLevelRequirement", function(levelRequirement)
+    print(levelRequirement)
+    print(getCurrentLevel())
+    if levelRequirement <= getCurrentLevel() then return false end
+end)
 
 -- Template function for creating missionPeds based on the config.
 local function createMissionPed(model, startCoord, targetText, targetEvent, targetIcon, levelRequirement)
@@ -112,11 +124,15 @@ end
 
 -- Spawns the peds for starting missions and links their qb-target from the config.
 local function loadMissions()
-    for k, v in pairs(Config.Missions) do
-        print(v.model)
-        Wait(100)
-        local ped = createMissionPed(v.model, v.startCoord, v.targetText, v.targetEvent, v.targetIcon, v.levelRequirement)
-
+    if missionPedLoaded == false then
+        for k, v in pairs(Config.Missions) do
+            print(v.model)
+            Wait(100)
+            local ped = createMissionPed(v.model, v.startCoord, v.targetText, v.targetEvent, v.targetIcon, v.levelRequirement)
+        end
+        missionPedLoaded = true
+    else
+        print("Mission ped already loaded")
     end
 end
 
@@ -146,6 +162,7 @@ local function deliverAnimation(ped)
 		Wait(3000)
 
 end
+
 
 local function loadPostProp(location)
     local modelHash = `prop_cardbordbox_03a` -- The ` return the jenkins hash of a string. see more at: https://cookbook.fivem.net/2019/06/23/lua-support-for-compile-time-jenkins-hashes/
@@ -183,6 +200,12 @@ end
 local function loadNetEvents()
     for k, v in pairs(Config.Missions) do
         RegisterNetEvent(v.targetEvent, function()
+            lib.notify({
+                title = 'Du startet oppdraget ' .. v.name .. '.',
+                description = 'Lykke til',
+                type = 'success',
+                position = 'top'
+            })
             if v.type == "goto" then
                 print(v.destination)
                 destination = v.destination
@@ -308,9 +331,4 @@ RegisterCommand('mStart', function()
     print(onMission)
     loadMissions()
     loadNetEvents()
-end)
-
-RegisterCommand('mDebug', function()
-    print(Config.Missions['mission1'].name)
-    print(Config.Missions['mission1'].targetEvent)
 end)

@@ -42,7 +42,9 @@ Missions = {
         carDeliverDestination = vector4(-954.7, -1287.38, 5.03, 118.74),
         carName = 'Oppdrag',
         paymentType = "bank",
-        rewardAmount = "1000"
+        rewardAmount = "1000",
+        levelRequirement = 2,
+        description = "Test mission for GTA mission using ox lib for menu."
 
     },
 
