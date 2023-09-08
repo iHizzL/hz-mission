@@ -4,6 +4,8 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local onMission = false
 local completedMissions = 5
 local missionPedLoaded = false
+local eventsLoaded = false
+local finishedCounter = 0
 
 local function getCurrentLevel()
     return completedMissions
@@ -124,6 +126,7 @@ end
 
 -- Spawns the peds for starting missions and links their qb-target from the config.
 local function loadMissions()
+    print("Loading missionPeds")
     if missionPedLoaded == false then
         for k, v in pairs(Config.Missions) do
             print(v.model)
@@ -198,26 +201,92 @@ local function loadPostProp(location)
 end
 -- Load all needed RegisterNetEvents for all missions dynamically.
 local function loadNetEvents()
-    for k, v in pairs(Config.Missions) do
-        RegisterNetEvent(v.targetEvent, function()
-            lib.notify({
-                title = 'Du startet oppdraget ' .. v.name .. '.',
-                description = 'Lykke til',
-                type = 'success',
-                position = 'top'
-            })
-            if v.type == "goto" then
-                print(v.destination)
-                destination = v.destination
-                destinationPed = createGotoPed(v.destinationModel, v.destination, v.destinationText, v.finishEvent, v.targetIcon, v.pickupItem)
-                blip = AddBlipForCoord(destination.x, destination.y, destination.z)
-                SetBlipRoute(blip, true)
-                onMission = true
-            end
-            if v.type == 'gta' then
-                local carPickedUp = false
+    print("Loading events")
+    if eventsLoaded == false then
+        for k, v in pairs(Config.Missions) do
+            RegisterNetEvent(v.targetEvent, function()
+                lib.notify({
+                    title = 'Du startet oppdraget ' .. v.name .. '.',
+                    description = 'Lykke til',
+                    type = 'success',
+                    position = 'top'
+                })
+                if v.type == "goto" then
+                    print(v.destination)
+                    destination = v.destination
+                    destinationPed = createGotoPed(v.destinationModel, v.destination, v.destinationText, v.finishEvent, v.targetIcon, v.pickupItem)
+                    blip = AddBlipForCoord(destination.x, destination.y, destination.z)
+                    SetBlipRoute(blip, true)
+                    onMission = true
+                end
+                if v.type == 'gta' then
+                    local carPickedUp = false
+                    local car = createStealCar(v.carModel, v.destination)
+                    --Create thread to check if player is inside car and if so, set gps for a destination and then break thread.
+                    blip = AddBlipForEntity(car)
+                    SetBlipSprite(blip, 225)
+                    SetBlipColour(blip, 1)
+                    SetBlipRoute(blip, true)
+                    BeginTextCommandSetBlipName("STRING")
+                    AddTextComponentString(v.carName)
+                    EndTextCommandSetBlipName(blip)
+                    onMission = true
+                    CreateThread(function()
+                        while onMission == true do
+                            Wait(1000)
+                            local playerPed = PlayerPedId()
+                            local playerCoords = GetEntityCoords(playerPed)
+                            local carCoords = v.destination
+                            local distance = Vdist(playerCoords.x, playerCoords.y, playerCoords.z, carCoords.x, carCoords.y, carCoords.z)
+                            print(distance)
+                            if distance < 1.0 then
+                                print("Player is in car")
+                                SetBlipRoute(blip, false)
+                                RemoveBlip(blip)
+                                blip = AddBlipForCoord(v.carDeliverDestination.x, v.carDeliverDestination.y, v.carDeliverDestination.z)
+                                SetBlipRoute(blip, true)
+                                carPickedUp = true
+                                break
+                            end
+                        end
+                    end)
+                    CreateThread(function()
+                        while onMission == true do
+                            Wait(1000)
+                            print("this live")
+                            if carPickedUp == true then
+                                local playerPed = PlayerPedId()
+                                local playerCoords = GetEntityCoords(playerPed)
+                                local deliverCoords = v.carDeliverDestination
+                                local distance = Vdist(playerCoords.x, playerCoords.y, playerCoords.z, deliverCoords.x, deliverCoords.y, deliverCoords.z)
+                                print("Checking car to deliver dist")
+                                print(distance)
+                                if distance < 2.0 then
+                                    print("Player is at deliver destination")
+                                    RemoveBlip(blip)
+                                    SetBlipRoute(blip, false)
+                                    delveh = GetVehiclePedIsIn(playerPed, false)
+                                    TaskLeaveAnyVehicle(playerPed, 0, 0)
+                                    SetVehicleDoorsLocked(delveh, 2)
+                                    Wait(10000)
+                                    DeleteVehicle(delveh)
+                                    onMission = false
+                                    completedMissions = completedMissions + 1
+                                    TriggerServerEvent("hz-mission:gta:getReward", v.paymentType, v.finishedMessage, v.rewardAmount)
+                                    break
+                                end
+                            end
+                    end
+                end)
+                end
+            if v.type == "post" then
+                local robbed = false
                 local car = createStealCar(v.carModel, v.destination)
                 --Create thread to check if player is inside car and if so, set gps for a destination and then break thread.
+                SetVehicleDoorOpen(car, 3, false, false)
+                SetVehicleDoorOpen(car, 2, false, false)
+                Wait(100)
+                obj = loadPostProp(v.destination)
                 blip = AddBlipForEntity(car)
                 SetBlipSprite(blip, 225)
                 SetBlipColour(blip, 1)
@@ -226,98 +295,38 @@ local function loadNetEvents()
                 AddTextComponentString(v.carName)
                 EndTextCommandSetBlipName(blip)
                 onMission = true
-                CreateThread(function()
-                    while onMission == true do
-                        Wait(1000)
-                        local playerPed = PlayerPedId()
-                        local playerCoords = GetEntityCoords(playerPed)
-                        local carCoords = v.destination
-                        local distance = Vdist(playerCoords.x, playerCoords.y, playerCoords.z, carCoords.x, carCoords.y, carCoords.z)
-                        print(distance)
-                        if distance < 1.0 then
-                            print("Player is in car")
-                            SetBlipRoute(blip, false)
-                            RemoveBlip(blip)
-                            blip = AddBlipForCoord(v.carDeliverDestination.x, v.carDeliverDestination.y, v.carDeliverDestination.z)
-                            SetBlipRoute(blip, true)
-                            carPickedUp = true
-                            break
-                        end
+                Wait(10000)
+                DeleteObject(obj)
+                DeleteVehicle(car)
+            end
+            Finisher = AddEventHandler(v.finishEvent, function()
+                if onMission == true then
+                    exports['qb-target']:RemoveTargetEntity(destinationPed)
+                    RemoveBlip(blip)
+                    print(v.itemReward)
+                    local reward = v.itemReward
+                    local finishedMessage = v.finishedMessage
+                    deliverAnimation(destinationPed)
+                    if v.pickupItem then
+                        TriggerServerEvent("hz-mission:removeItem", v.pickupItem)
                     end
-                end)
-                CreateThread(function()
-                    while onMission == true do
-                        Wait(1000)
-                        print("this live")
-                        if carPickedUp == true then
-                            local playerPed = PlayerPedId()
-                            local playerCoords = GetEntityCoords(playerPed)
-                            local deliverCoords = v.carDeliverDestination
-                            local distance = Vdist(playerCoords.x, playerCoords.y, playerCoords.z, deliverCoords.x, deliverCoords.y, deliverCoords.z)
-                            print("Checking car to deliver dist")
-                            print(distance)
-                            if distance < 2.0 then
-                                print("Player is at deliver destination")
-                                RemoveBlip(blip)
-                                SetBlipRoute(blip, false)
-                                delveh = GetVehiclePedIsIn(playerPed, false)
-                                TaskLeaveAnyVehicle(playerPed, 0, 0)
-                                SetVehicleDoorsLocked(delveh, 2)
-                                Wait(10000)
-                                DeleteVehicle(delveh)
-                                onMission = false
-                                completedMissions = completedMissions + 1
-                                TriggerServerEvent("hz-mission:gta:getReward", v.paymentType, v.finishedMessage, v.rewardAmount)
-                                break
-                            end
-                        end
+                    TriggerServerEvent("hz-mission:getItem", reward, finishedMessage)
+                    -- Ped wander off/delete
+                    TaskWanderStandard(destinationPed, 10.0, 10)
+                    Wait(10000)
+                    DeletePed(destinationPed)
+                    onMission = false
+                    completedMissions = completedMissions + 1
+                    RemoveEventHandler(Finisher)
                 end
             end)
-            end
-        if v.type == "post" then
-            local robbed = false
-            local car = createStealCar(v.carModel, v.destination)
-            --Create thread to check if player is inside car and if so, set gps for a destination and then break thread.
-            SetVehicleDoorOpen(car, 3, false, false)
-            SetVehicleDoorOpen(car, 2, false, false)
             Wait(100)
-            obj = loadPostProp(v.destination)
-            blip = AddBlipForEntity(car)
-            SetBlipSprite(blip, 225)
-            SetBlipColour(blip, 1)
-            SetBlipRoute(blip, true)
-            BeginTextCommandSetBlipName("STRING")
-            AddTextComponentString(v.carName)
-            EndTextCommandSetBlipName(blip)
-            onMission = true
-            Wait(10000)
-            DeleteObject(obj)
-            DeleteVehicle(car)
-        end
-        RegisterNetEvent(v.finishEvent, function()
-            if onMission == true then
-            exports['qb-target']:RemoveTargetEntity(destinationPed)
-            RemoveBlip(blip)
-            print(v.itemReward)
-            local reward = v.itemReward
-            local finishedMessage = v.finishedMessage
-            deliverAnimation(destinationPed)
-            if v.pickupItem then
-                TriggerServerEvent("hz-mission:removeItem", v.pickupItem)
-            end
-            TriggerServerEvent("hz-mission:getItem", reward, finishedMessage)
-            -- Ped wander off/delete
-            TaskWanderStandard(destinationPed, 10.0, 10)
-            Wait(10000)
-            DeletePed(destinationPed)
-            onMission = false
-            completedMissions = completedMissions + 1
-            end
         end)
-        Wait(100)
-    end)
+        eventsLoaded = true
+    end
 end
 end
+
 
 RegisterNetEvent('hz-mission:post:pickup', function(prop)
     FreezeEntityPosition(prop, false)
