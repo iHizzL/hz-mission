@@ -6,6 +6,7 @@ local completedMissions = 5
 local missionPedLoaded = false
 local eventsLoaded = false
 local finishedCounter = 0
+local karma = 0
 
 local function getCurrentLevel()
     return completedMissions
@@ -340,4 +341,9 @@ RegisterCommand('mStart', function()
     print(onMission)
     loadMissions()
     loadNetEvents()
+end)
+
+RegisterCommand('mInsert', function(karma)
+    level = getCurrentLevel()
+    TriggerServerEvent('hz-mission:server:saveLevels',level, karma)
 end)

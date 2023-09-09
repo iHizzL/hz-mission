@@ -1,6 +1,7 @@
 -- Types of missions:
 -- goto: Go to a location and interact with a ped
 -- GTA: Steal a car and deliver it to a location
+-- Karma is meant to be used to determine what kind of missions you get. If you have negative karma, you will get more illegal missions.
 
 Config = {
 -- If pickupitem is empty, not item is needed for the mission to be completed.
@@ -21,6 +22,7 @@ Missions = {
         finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
         pickupItem = "",
         levelRequirement = 0,
+        karma = 1
 
     },
 
@@ -44,7 +46,8 @@ Missions = {
         paymentType = "bank",
         rewardAmount = "1000",
         levelRequirement = 2,
-        description = "Test mission for GTA mission using ox lib for menu."
+        description = "Test mission for GTA mission using ox lib for menu.",
+        karma = -1
 
     },
 
