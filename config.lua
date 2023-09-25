@@ -69,5 +69,32 @@ Missions = {
         carName = 'Ran'
 
     },
+    
+    ['mission4'] = {
+        name = "Deliveroo",
+        model = "cs_mrk",
+        startCoord = vector4(-917.3, -1280.06, 5.03, 115.18),
+        targetEvent = "hz-mission:cargo:startMission",
+        targetIcon = "fa-solid fa-hand",
+        targetText = "Gjør en leveranse",
+        type = "cargo",
+        destination = vector4(-929.17, -1284.63, 5.03, 167.82),
+        destinationModel = 'a_m_y_epsilon_01',
+        destinationText = 'Lever',
+        finishEvent = "hz-mission:finishMission",
+        itemReward = "",
+        finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
+        carModel = 'dubsta',
+        carDeliverDestination = vector4(-954.7, -1287.38, 5.03, 118.74),
+        carName = 'Oppdrag',
+        paymentType = "bank",
+        rewardAmount = "1000",
+        levelRequirement = 2,
+        description = "Test mission for GTA mission using ox lib for menu.",
+        pickupLocation = vector4(-923.83, -1277.4, 5.04, 39.43),
+        pickupProp = "hei_prop_heist_box",
+        karma = -1
+
+    },
 }
 }

@@ -2,11 +2,11 @@ local QBCore = exports['qb-core']:GetCoreObject()
 
 
 local onMission = false
-local completedMissions = 5
+local completedMissions = 3
 local missionPedLoaded = false
 local eventsLoaded = false
 local finishedCounter = 0
-local karma = 0
+local karma = 5
 
 local function getCurrentLevel()
     return completedMissions
@@ -89,7 +89,7 @@ local function createGotoPed(destinationModel, destination, destinationText, fin
         distance = 2.0
     })
     end
-    if pickupItem ~= "" then
+    if pickupItem ~= "" and pickupItem then
         exports['qb-target']:AddTargetEntity(destinationPed, {
             options = {
                 {
@@ -112,16 +112,23 @@ local function createGotoPed(destinationModel, destination, destinationText, fin
 end
 
 -- Spawns a car at a set location, and sets a blip to the car.
-local function createStealCar(model, destination)
+local function createStealCar(model, destination, locked)
     local car = GetHashKey(model)
     local coords = destination
     RequestModel(car)
+    print(locked)
     while not HasModelLoaded(car) do Wait(10) end
-    local vehicle = CreateVehicle(car, coords.x, coords.y, coords.z, 0, true, false)
+    local vehicle = CreateVehicle(car, coords.x, coords.y, coords.z, 0, true, true)
     SetVehicleOnGroundProperly(vehicle)
-    SetVehicleEngineOn(vehicle, false, true)
     SetModelAsNoLongerNeeded(vehicle)
-    SetVehicleDoorsLocked(vehicle, 2)
+    if locked == true then
+        SetVehicleDoorsLocked(vehicle, 2)
+        print("true")
+    end
+    if locked == false then
+        SetVehicleDoorsLocked(vehicle, 0)
+        print("false")
+    end
     return vehicle
 end
 
@@ -138,6 +145,13 @@ local function loadMissions()
     else
         print("Mission ped already loaded")
     end
+end
+
+local function genericAnimation(animDict, animation)
+    local playerPed = PlayerPedId()
+    RequestAnimDict(animDict)
+    	while not HasAnimDictLoaded(animDict) do Wait(10) end
+    TaskPlayAnim(playerPed, animDict, animation, 8.0, 1.0, -1, 16, 0, 0, 0, 0)
 end
 
 -- Function for handling animation for goto missions.
@@ -168,8 +182,8 @@ local function deliverAnimation(ped)
 end
 
 
-local function loadPostProp(location)
-    local modelHash = `prop_cardbordbox_03a` -- The ` return the jenkins hash of a string. see more at: https://cookbook.fivem.net/2019/06/23/lua-support-for-compile-time-jenkins-hashes/
+local function loadPostProp(location, modelHash)
+    --local modelHash = `prop_cardbordbox_03a` -- The ` return the jenkins hash of a string. see more at: https://cookbook.fivem.net/2019/06/23/lua-support-for-compile-time-jenkins-hashes/
     local spawnLocation = vector4(location.x, location.y-6, location.z, location.w)
 
     if not HasModelLoaded(modelHash) then
@@ -190,10 +204,10 @@ local function loadPostProp(location)
             {
                 type = "client",
                 action = function(obj)
-                    TriggerEvent('hz-mission:post:pickup', obj)
+                    TriggerEvent('hz-mission:post:pickup', obj, cargoCar)
                 end,
                 icon = "fa-solid fa-truck-fast",
-                label = "Stjel"
+                label = "Plukk opp"
             }
         },
         distance = 2.0
@@ -220,9 +234,43 @@ local function loadNetEvents()
                     SetBlipRoute(blip, true)
                     onMission = true
                 end
+                if v.type == "cargo" then
+                    local carPickedUp = false
+                    print(v.destination)
+                    destination = v.destination
+                    cargoCar = createStealCar(v.carModel, v.destination, false)
+                    blip = AddBlipForEntity(cargoCar)
+                    SetBlipSprite(blip, 225)
+                    SetBlipColour(blip, 1)
+                    SetBlipRoute(blip, true)
+                    BeginTextCommandSetBlipName("STRING")
+                    AddTextComponentString(v.carName)
+                    EndTextCommandSetBlipName(blip)
+                    onMission = true
+                    CreateThread(function()
+                        while onMission == true do
+                            Wait(1000)
+                            local playerPed = PlayerPedId()
+                            local playerCoords = GetEntityCoords(playerPed)
+                            local carCoords = v.destination
+                            local distance = Vdist(playerCoords.x, playerCoords.y, playerCoords.z, carCoords.x, carCoords.y, carCoords.z)
+                            print(distance)
+                            if distance < 1.0 then
+                                print("Player is in car")
+                                SetBlipRoute(blip, false)
+                                RemoveBlip(blip)
+                                obj = loadPostProp(v.pickupLocation, `hei_prop_heist_box`)
+                                blip = AddBlipForCoord(v.pickupLocation.x, v.pickupLocation.y, v.pickupLocation.z)
+                                SetBlipRoute(blip, true)
+                                carPickedUp = true
+                                break
+                            end
+                        end
+                    end)
+                end
                 if v.type == 'gta' then
                     local carPickedUp = false
-                    local car = createStealCar(v.carModel, v.destination)
+                    local car = createStealCar(v.carModel, v.destination, true)
                     --Create thread to check if player is inside car and if so, set gps for a destination and then break thread.
                     blip = AddBlipForEntity(car)
                     SetBlipSprite(blip, 225)
@@ -287,7 +335,7 @@ local function loadNetEvents()
                 SetVehicleDoorOpen(car, 3, false, false)
                 SetVehicleDoorOpen(car, 2, false, false)
                 Wait(100)
-                obj = loadPostProp(v.destination)
+                obj = loadPostProp(v.destination, `prop_cardbordbox_03a`)
                 blip = AddBlipForEntity(car)
                 SetBlipSprite(blip, 225)
                 SetBlipColour(blip, 1)
@@ -329,21 +377,133 @@ end
 end
 
 
-RegisterNetEvent('hz-mission:post:pickup', function(prop)
+RegisterNetEvent('hz-mission:post:pickup', function(prop, car)
+    local playerPed = PlayerPedId()
     FreezeEntityPosition(prop, false)
-    AttachEntityToEntity(prop, PlayerPedId(), GetPedBoneIndex(PlayerPedId(), 57005), 10, 0, 10, 10, 100, 0, false, false, false, false, 2, true)
+    RequestAnimDict("anim@heists@box_carry@")
+    while not HasAnimDictLoaded("anim@heists@box_carry@") do Wait(10) end
+    TaskPlayAnim(playerPed, "anim@heists@box_carry@", "idle", -1, -1, -1, 49, 0, 0, 0, 0)
+    --TaskPlayAnimAdvanced(playerPed, "anim@heists@box_carry@", "idle", -1, -1, -1, 49, 0, 0, 0, 0, 0, 1.0, 1.0, 0, 0)
+    AttachEntityToEntity(prop, PlayerPedId(), GetPedBoneIndex(PlayerPedId(), 60309), 0.025, 0.08, 0.255, -145.0, 290.0, 0, false, false, false, false, 2, true)
+    CreateThread(function()
+        while true do
+            Wait(1000)
+            local door = GetVehicleDoorAngleRatio(car, 5)
+            print(door)
+            if door > 0.0 then
+                print(door)
+                exports['qb-target']:AddTargetEntity(car, {
+                    options = {
+                        {
+                            type = "client",
+                            action = function()
+                                DetachEntity(prop, true, true)
+                                ClearPedTasks(playerPed)
+                                AttachEntityToEntity(prop, car, GetEntityBoneIndexByName(car, "chassis_dummy"), 0.0, -1.5, 0.3, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+                                exports['qb-target']:RemoveTargetEntity(car)
+                                TriggerEvent('hz-mission:generic:pickup', car, prop)
+                                -- FORTSETT HER. NÅ FJERNES BARE BOKS. HVA SKJER SÅ?
+                            end,
+                            icon = "fa-solid fa-truck-fast",
+                            label = "Legg inn"
+                        }
+                    },
+                    distance = 2.0
+                })
+                break
+            end
+    end
+    end)
+end)
+
+RegisterNetEvent('hz-mission:generic:pickup', function(car, prop)
+    local playerPed = PlayerPedId()
+    exports['qb-target']:AddTargetEntity(car, {
+        options = {
+            {
+                type = "client",
+                action = function()
+                    DetachEntity(prop, true, true)
+                    AttachEntityToEntity(prop, PlayerPedId(), GetPedBoneIndex(PlayerPedId(), 60309), 0.025, 0.08, 0.255, -145.0, 290.0, 0, false, false, false, false, 2, true)
+                    TaskPlayAnim(playerPed, "anim@heists@box_carry@", "idle", -1, -1, -1, 49, 0, 0, 0, 0)
+                    Wait(5000)
+                    DeleteObject(prop)
+                    exports['qb-target']:RemoveTargetEntity(car)
+                end,
+                icon = "fa-solid fa-truck-fast",
+                label = "Ta ut pakke"
+            }
+        },
+        distance = 2.0
+    })
 end)
 
 
+RegisterCommand('mNpc', function()
+    local coords = GetEntityCoords(PlayerPedId()) - vector3(0.5, 0.5, 1.0)
+    local npc = exports['rep-talkNPC']:CreateNPC({
+        npc = 'u_m_y_abner',
+        coords = vector4(coords.x, coords.y, coords.z, 0.0),
+        name = 'Rep Scripts',
+        animName = "mini@strip_club@idles@bouncer@base",
+        animDist = "base",
+        tag = "Bot",
+        color = "blue.7",
+        startMSG = 'Hello, I am the Rep Scripts Bot'
+    }, {
+        [1] = {
+            label = "What is Rep Scripts?",
+            shouldClose = false,
+            action = function()
+                exports['rep-talkNPC']:updateMessage("It is a team that creates scripts for FiveM")
+            end
+        },
+        [2] = {
+            label = "What categories of scripts do you have?",
+            shouldClose = false,
+            action = function()
+                exports['rep-talkNPC']:changeDialog("We have clean and dirty jobs, which one do you want to choose?",
+                    {
+                        [1] = {
+                            label = "Clean jobs",
+                            shouldClose = true,
+                            action = function()
+                            end
+                        },
+                        [2] = {
+                            label = "Dirty jobs",
+                            shouldClose = true,
+                            action = function()
+                            end
+                        }
+                    }
+                )
+            end
+        },
+        [3] = {
+            label = "Goodbye",
+            shouldClose = true,
+            action = function()
+                TriggerEvent('rep-talkNPC:client:close')
+            end
+        }
+    })
+
+end)
 
 -- Start the script.
 RegisterCommand('mStart', function()
     print(onMission)
     loadMissions()
     loadNetEvents()
-end)
+end, false)
 
 RegisterCommand('mInsert', function(karma)
     level = getCurrentLevel()
-    TriggerServerEvent('hz-mission:server:saveLevels',level, karma)
-end)
+    TriggerServerEvent('hz-mission:server:saveLevels',karma, level)
+end, false)
+
+RegisterCommand('mUpdate', function(karma)
+    level = getCurrentLevel()
+    TriggerServerEvent('hz-mission:server:updateLevels',karma, level)
+end, false)

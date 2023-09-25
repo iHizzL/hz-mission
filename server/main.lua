@@ -60,10 +60,21 @@ RegisterNetEvent('hz-mission:server:saveLevels', function(karma, level)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
 
-    MySQL.insert.await('INSERT INTO `missions` (license, citizenid, karma, level) VALUES (?, ?, ?)', {
+    local id = MySQL.Sync.insert('INSERT INTO `missions` (license, citizenid, karma, level) VALUES (?, ?, ?, ?)', {
         Player['PlayerData']['license'],Player['PlayerData']['citizenid'], karma, level
     })
 
+	print(id)
 
+end)
 
+RegisterNetEvent('hz-mission:server:updateLevels', function(karma, level)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+
+    local affectedRows = MySQL.update.await('UPDATE `missions` SET karma = ? WHERE license = ?', {
+		karma, Player['PlayerData']['license']
+	})
+	 
+	print(affectedRows)
 end)
