@@ -22,7 +22,24 @@ Missions = {
         finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
         pickupItem = "",
         levelRequirement = 0,
-        karma = 1
+        karma = 1,
+        npcName = "Geir Gogutt",
+        npcChoices = {
+            [1] = {
+                label = "Hva heter du?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Jeg heter Geir Gogutt")
+                end
+            },
+            [2] = {
+                label = "Hva heter jeg?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Hvordan skal jeg vite det?")
+                end
+            },
+        }
 
     },
 
@@ -47,7 +64,31 @@ Missions = {
         rewardAmount = "1000",
         levelRequirement = 2,
         description = "Test mission for GTA mission using ox lib for menu.",
-        karma = -1
+        karma = -1,
+        npcName = "Santi Bobbic",
+        npcChoices = {
+            [1] = {
+                label = "Hva vil du?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Jeg heter Geir Gogutt")
+                end
+            },
+            [2] = {
+                label = "Er du en pirat?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Hvordan skal jeg vite det?")
+                end
+            },
+            [3] = {
+                label = "Kan du velge tre ting?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Hvordan skal jeg vite det?")
+                end
+            },
+        }
 
     },
 
@@ -66,7 +107,24 @@ Missions = {
         itemReward = "advancedlockpick",
         finishedMessage = "Du fullførte oppdraget, du fikk et avansert dirkesett.",
         carModel = 'BOXVILLE2',
-        carName = 'Ran'
+        carName = 'Ran',
+        npcName = "Geir Gogutt",
+        npcChoices = {
+            [1] = {
+                label = "Hva heter du?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Jeg heter Geir Gogutt")
+                end
+            },
+            [2] = {
+                label = "Hva heter jeg?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Hvordan skal jeg vite det?")
+                end
+            },
+        }
 
     },
     
@@ -93,7 +151,24 @@ Missions = {
         description = "Test mission for GTA mission using ox lib for menu.",
         pickupLocation = vector4(-923.83, -1277.4, 5.04, 39.43),
         pickupProp = "hei_prop_heist_box",
-        karma = -1
+        karma = -1,
+        npcName = "Geir Gogutt",
+        npcChoices = {
+            [1] = {
+                label = "Hva heter du?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Jeg heter Geir Gogutt")
+                end
+            },
+            [2] = {
+                label = "Hva heter jeg?",
+                shouldClose = false,
+                action = function()
+                    exports['rep-talkNPC']:updateMessage("Hvordan skal jeg vite det?")
+                end
+            },
+        }
 
     },
 }

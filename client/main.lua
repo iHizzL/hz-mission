@@ -61,6 +61,42 @@ local function createMissionPed(model, startCoord, targetText, targetEvent, targ
     })
 end
 
+local function createMissionPedRep(model, startCoord, targetText, targetEvent, targetIcon, levelRequirement, name, npcChoices)
+	local hash = GetHashKey(model)
+    local coords = startCoord
+    local level = completedMissions
+    if not levelRequirement then
+        levelRequirement = 0
+    end
+    print(npcChoices)
+
+    local dialogueOptions = {}
+
+    -- Loop through npcChoices and create dialogue options dynamically
+    for i, choiceData in ipairs(npcChoices) do
+        table.insert(dialogueOptions, {
+            label = choiceData.label, -- Extract the 'label' field
+            shouldClose = false,
+            action = function()
+                -- You can customize the action for each choice here
+                choiceData.action() -- Call the action function from npcChoices
+            end
+        })
+    end
+
+    local npc = exports['rep-talkNPC']:CreateNPC({
+        npc = model,
+        coords = vector4(coords.x, coords.y, coords.z, 0.0),
+        name = name,
+        animName = "mini@strip_club@idles@bouncer@base",
+        animDist = "base",
+        tag = "Bot",
+        color = "blue.7",
+        startMSG = targetText
+    }, dialogueOptions)
+    PlaceObjectOnGroundProperly(npc)
+end
+
 -- Creates the destinationPed for "goto" missions and links their qb-target from the config.
 local function createGotoPed(destinationModel, destination, destinationText, finishEvent, icon, pickupItem)
     local hash = GetHashKey(destinationModel)
@@ -139,7 +175,7 @@ local function loadMissions()
         for k, v in pairs(Config.Missions) do
             print(v.model)
             Wait(100)
-            local ped = createMissionPed(v.model, v.startCoord, v.targetText, v.targetEvent, v.targetIcon, v.levelRequirement)
+            local ped = createMissionPedRep(v.model, v.startCoord, v.targetText, v.targetEvent, v.targetIcon, v.levelRequirement, v.npcName, v.npcChoices)
         end
         missionPedLoaded = true
     else
@@ -444,7 +480,7 @@ RegisterCommand('mNpc', function()
     local npc = exports['rep-talkNPC']:CreateNPC({
         npc = 'u_m_y_abner',
         coords = vector4(coords.x, coords.y, coords.z, 0.0),
-        name = 'Rep Scripts',
+        name = 'Håkon Tjuvradd',
         animName = "mini@strip_club@idles@bouncer@base",
         animDist = "base",
         tag = "Bot",
